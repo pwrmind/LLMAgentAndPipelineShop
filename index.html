@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Agent and Pipeline Shop</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-latest.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: white;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 25px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        nav a:hover, nav a.active {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--accent);
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Mobile Navigation */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--primary);
+        }
+
+        /* Section Styles */
+        section {
+            padding: 80px 0;
+            display: none;
+        }
+
+        section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+            color: var(--primary);
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background-color: var(--secondary);
+            border-radius: 2px;
+        }
+
+        /* Hero Section */
+        #hero {
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+            color: white;
+            text-align: center;
+            padding: 120px 0;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background-color: var(--secondary);
+            color: white;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Products Section */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            height: 200px;
+            background-color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-image i {
+            font-size: 5rem;
+            color: var(--secondary);
+            opacity: 0.7;
+        }
+
+        .product-info {
+            padding: 25px;
+        }
+
+        .product-info h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .product-info p {
+            color: #666;
+            margin-bottom: 15px;
+            min-height: 70px;
+        }
+
+        .product-features {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .product-features li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .product-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin: 15px 0;
+        }
+
+        .btn-add {
+            background-color: var(--success);
+            width: 100%;
+            padding: 12px;
+        }
+
+        /* About Section */
+        #about {
+            background-color: white;
+        }
+
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .about-content p {
+            margin-bottom: 25px;
+        }
+
+        /* Contact Section */
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* Cart Section */
+        .cart-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .cart-items {
+            flex: 2;
+            min-width: 300px;
+        }
+
+        .cart-summary {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            align-self: flex-start;
+        }
+
+        .cart-item {
+            display: flex;
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            align-items: center;
+        }
+
+        .cart-item-image {
+            width: 80px;
+            height: 80px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+        }
+
+        .cart-item-image i {
+            font-size: 2rem;
+            color: var(--secondary);
+        }
+
+        .cart-item-details {
+            flex-grow: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .cart-item-price {
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: var(--light);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .summary-total {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+
+        .btn-checkout {
+            background-color: var(--success);
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--primary);
+            color: white;
+            padding: 40px 0 20px;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--secondary);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background-color: var(--secondary);
+            transform: translateY(-3px);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Mobile Adaptation */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            nav ul {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: white;
+                flex-direction: column;
+                box-shadow: var(--shadow);
+                padding: 20px;
+                gap: 10px;
+            }
+
+            nav ul.active {
+                display: flex;
+            }
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-content p {
+                font-size: 1.2rem;
+            }
+
+            .section-title h2 {
+                font-size: 2rem;
+            }
+
+            .cart-container {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                flex-direction: column;
+            }
+        }
+
+        /* Empty Cart */
+        .empty-cart {
+            text-align: center;
+            padding: 50px 0;
+        }
+
+        .empty-cart i {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-cart p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <span>LLM Shop</span>
+            </div>
+            
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <nav>
+                <ul data-bind="css: { active: mobileMenuVisible }">
+                    <li><a href="#" data-bind="click: showHome, css: { active: currentSection() === 'home' }">Главная</a></li>
+                    <li><a href="#" data-bind="click: showAgents, css: { active: currentSection() === 'agents' }">Агенты</a></li>
+                    <li><a href="#" data-bind="click: showPipelines, css: { active: currentSection() === 'pipelines' }">Конвейеры</a></li>
+                    <li><a href="#" data-bind="click: showAbout, css: { active: currentSection() === 'about' }">О нас</a></li>
+                    <li><a href="#" data-bind="click: showContact, css: { active: currentSection() === 'contact' }">Контакты</a></li>
+                    <li>
+                        <a href="#" class="cart-icon" data-bind="click: showCart, css: { active: currentSection() === 'cart' }">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count" data-bind="text: cart().length, visible: cart().length > 0"></span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Sections -->
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" data-bind="css: { active: currentSection() === 'home' }">
+            <div class="container hero-content">
+                <h1>Добро пожаловать в магазин LLM агентов и конвейеров!</h1>
+                <p>Выберите готовые решения для разработки и интеграции.</p>
+                <button class="btn" data-bind="click: showAgents">Начать сейчас</button>
+            </div>
+        </section>
+
+        <!-- Agents Section -->
+        <section id="agents" data-bind="css: { active: currentSection() === 'agents' }">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Готовые LLM агенты</h2>
+                </div>
+                
+                <div class="products-grid">
+                    <!-- Agents List -->
+                    <div class="product-card" data-bind="foreach: agents">
+                        <div class="product-image">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="product-info">
+                            <h3 data-bind="text: name"></h3>
+                            <p data-bind="text: description"></p>
+                            
+                            <ul class="product-features">
+                                <li data-bind="foreach: features">
+                                    <i class="fas fa-check-circle"></i> <span data-bind="text: $data"></span>
+                                </li>
+                            </ul>
+                            
+                            <div class="product-price" data-bind="text: '$' + price"></div>
+                            <button class="btn btn-add" data-bind="click: $parent.addToCart">
+                                <i class="fas fa-cart-plus"></i> Добавить в корзину
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pipelines Section -->
+        <section id="pipelines" data-bind="css: { active: currentSection() === 'pipelines' }">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Готовые конвейеры</h2>
+                </div>
+                
+                <div class="products-grid">
+                    <!-- Pipelines List -->
+                    <div class="product-card" data-bind="foreach: pipelines">
+                        <div class="product-image">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="product-info">
+                            <h3 data-bind="text: name"></h3>
+                            <p data-bind="text: description"></p>
+                            
+                            <ul class="product-features">
+                                <li data-bind="foreach: stages">
+                                    <i class="fas fa-cog"></i> <span data-bind="text: $data"></span>
+                                </li>
+                            </ul>
+                            
+                            <div class="product-price" data-bind="text: '$' + price"></div>
+                            <button class="btn btn-add" data-bind="click: $parent.addToCart">
+                                <i class="fas fa-cart-plus"></i> Добавить в корзину
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" data-bind="css: { active: currentSection() === 'about' }">
+            <div class="container">
+                <div class="section-title">
+                    <h2>О нас</h2>
+                </div>
+                
+                <div class="about-content">
+                    <p>Мы предоставляем инновационные решения для разработки LLM агентов и конвейеров, которые помогают автоматизировать процессы и повысить эффективность вашего бизнеса.</p>
+                    <p>Наша команда экспертов в области искусственного интеллекта и обработки естественного языка создает передовые инструменты, которые экономят ваше время и ресурсы.</p>
+                    <p>Мы стремимся сделать технологии машинного обучения доступными для всех, предлагая готовые решения, которые легко интегрируются в ваши существующие системы.</p>
+                    <p>Сотрудничая с нами, вы получаете не только качественный продукт, но и постоянную поддержку и консультации от наших специалистов.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" data-bind="css: { active: currentSection() === 'contact' }">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Связаться с нами</h2>
+                </div>
+                
+                <div class="contact-form">
+                    <div class="form-group">
+                        <label for="name">Имя</label>
+                        <input type="text" id="name" placeholder="Ваше имя">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Ваш email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="message">Сообщение</label>
+                        <textarea id="message" placeholder="Ваше сообщение"></textarea>
+                    </div>
+                    
+                    <button class="btn">Отправить</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cart Section -->
+        <section id="cart" data-bind="css: { active: currentSection() === 'cart' }">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Корзина</h2>
+                </div>
+                
+                <div class="cart-container">
+                    <div class="cart-items">
+                        <!-- Empty Cart -->
+                        <div class="empty-cart" data-bind="visible: cart().length === 0">
+                            <i class="fas fa-shopping-cart"></i>
+                            <h3>Ваша корзина пуста</h3>
+                            <p>Добавьте агентов или конвейеры, чтобы продолжить</p>
+                            <button class="btn" data-bind="click: showAgents">Посмотреть продукты</button>
+                        </div>
+                        
+                        <!-- Cart Items -->
+                        <div data-bind="foreach: cart, visible: cart().length > 0">
+                            <div class="cart-item">
+                                <div class="cart-item-image">
+                                    <i class="fas" data-bind="css: type === 'agent' ? 'fa-brain' : 'fa-project-diagram'"></i>
+                                </div>
+                                
+                                <div class="cart-item-details">
+                                    <div class="cart-item-name" data-bind="text: name"></div>
+                                    <div class="cart-item-price" data-bind="text: '$' + price"></div>
+                                </div>
+                                
+                                <div class="cart-item-actions">
+                                    <div class="quantity-control">
+                                        <button class="quantity-btn" data-bind="click: $parent.decreaseQuantity">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <span data-bind="text: quantity"></span>
+                                        <button class="quantity-btn" data-bind="click: $parent.increaseQuantity">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <button class="btn-remove" data-bind="click: $parent.removeFromCart">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cart Summary -->
+                    <div class="cart-summary" data-bind="visible: cart().length > 0">
+                        <h3>Сумма заказа</h3>
+                        
+                        <div class="summary-item">
+                            <span>Товары:</span>
+                            <span data-bind="text: '$' + totalPrice()"></span>
+                        </div>
+                        
+                        <div class="summary-item">
+                            <span>Скидка:</span>
+                            <span>$0.00</span>
+                        </div>
+                        
+                        <div class="summary-item">
+                            <span>Доставка:</span>
+                            <span>Бесплатно</span>
+                        </div>
+                        
+                        <div class="summary-total">
+                            <span>Итого:</span>
+                            <span data-bind="text: '$' + totalPrice()"></span>
+                        </div>
+                        
+                        <button class="btn btn-checkout">Оформить заказ</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>LLM Agent and Pipeline Shop</h3>
+                    <p>Мы предоставляем решения для разработки LLM агентов и конвейеров, которые помогают автоматизировать процессы.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Свяжитесь с нами</h3>
+                    <p>Email: info@llmshop.com</p>
+                    <p>Телефон: +7 (999) 123-45-67</p>
+                    <p>Адрес: Москва, ул. Технологическая, д. 42</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Социальные сети</h3>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                © 2025 LLM Agent and Pipeline Shop. Все права защищены.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function AppViewModel() {
+            const self = this;
+            
+            // State management
+            self.currentSection = ko.observable('home');
+            self.mobileMenuVisible = ko.observable(false);
+            
+            // Navigation methods
+            self.showHome = function() {
+                self.currentSection('home');
+                self.mobileMenuVisible(false);
+            };
+            
+            self.showAgents = function() {
+                self.currentSection('agents');
+                self.mobileMenuVisible(false);
+            };
+            
+            self.showPipelines = function() {
+                self.currentSection('pipelines');
+                self.mobileMenuVisible(false);
+            };
+            
+            self.showAbout = function() {
+                self.currentSection('about');
+                self.mobileMenuVisible(false);
+            };
+            
+            self.showContact = function() {
+                self.currentSection('contact');
+                self.mobileMenuVisible(false);
+            };
+            
+            self.showCart = function() {
+                self.currentSection('cart');
+                self.mobileMenuVisible(false);
+            };
+            
+            // Toggle mobile menu
+            self.toggleMobileMenu = function() {
+                self.mobileMenuVisible(!self.mobileMenuVisible());
+            };
+            
+            // Product data
+            self.agents = ko.observableArray([
+                {
+                    id: 1,
+                    name: "Агент для обработки текста",
+                    description: "Агент, который анализирует и обрабатывает текстовые данные.",
+                    price: 500,
+                    features: ["Анализ тональности", "Извлечение ключевых слов", "Классификация текста", "Суммаризация"],
+                    type: "agent"
+                },
+                {
+                    id: 2,
+                    name: "Агент для генерации контента",
+                    description: "Агент, который генерирует текст на основе заданных параметров.",
+                    price: 700,
+                    features: ["Генерация статей", "Создание описаний продуктов", "Написание рекламных текстов", "Генерация идей"],
+                    type: "agent"
+                },
+                {
+                    id: 3,
+                    name: "Агент для анализа данных",
+                    description: "Агент, который анализирует структурированные данные и выявляет закономерности.",
+                    price: 850,
+                    features: ["Прогнозирование трендов", "Кластеризация данных", "Анализ временных рядов", "Визуализация результатов"],
+                    type: "agent"
+                }
+            ]);
+            
+            self.pipelines = ko.observableArray([
+                {
+                    id: 4,
+                    name: "Конвейер для обработки данных",
+                    description: "Конвейер, который включает в себя этапы очистки и анализа данных.",
+                    price: 1000,
+                    stages: ["Сбор данных", "Очистка данных", "Анализ данных", "Визуализация"],
+                    type: "pipeline"
+                },
+                {
+                    id: 5,
+                    name: "Конвейер для генерации отчетов",
+                    description: "Конвейер, который автоматически генерирует отчеты на основе данных.",
+                    price: 1200,
+                    stages: ["Сбор данных", "Обработка данных", "Генерация отчетов", "Экспорт в PDF"],
+                    type: "pipeline"
+                },
+                {
+                    id: 6,
+                    name: "Конвейер для NLP задач",
+                    description: "Комплексный конвейер для решения задач обработки естественного языка.",
+                    price: 1500,
+                    stages: ["Токенизация", "Лемматизация", "Извлечение сущностей", "Сентимент-анализ"],
+                    type: "pipeline"
+                }
+            ]);
+            
+            // Cart functionality
+            self.cart = ko.observableArray([]);
+            
+            self.addToCart = function(product) {
+                const existingItem = self.cart().find(item => item.id === product.id);
+                
+                if (existingItem) {
+                    existingItem.quantity(existingItem.quantity() + 1);
+                } else {
+                    const cartItem = {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: ko.observable(1),
+                        type: product.type
+                    };
+                    self.cart.push(cartItem);
+                }
+                
+                self.showCart();
+            };
+            
+            self.removeFromCart = function(item) {
+                self.cart.remove(item);
+            };
+            
+            self.increaseQuantity = function(item) {
+                item.quantity(item.quantity() + 1);
+            };
+            
+            self.decreaseQuantity = function(item) {
+                if (item.quantity() > 1) {
+                    item.quantity(item.quantity() - 1);
+                } else {
+                    self.cart.remove(item);
+                }
+            };
+            
+            self.totalPrice = ko.computed(() => {
+                let total = 0;
+                self.cart().forEach(item => {
+                    total += item.price * item.quantity();
+                });
+                return total;
+            });
+            
+            self.checkout = function() {
+                alert('Заказ оформлен! Сумма: $' + self.totalPrice());
+                self.cart.removeAll();
+                self.showHome();
+            };
+        }
+        
+        // Initialize the app
+        const viewModel = new AppViewModel();
+        ko.applyBindings(viewModel);
+        
+        // Setup mobile menu button
+        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
+            viewModel.toggleMobileMenu();
+        });
+        
+        // Setup checkout button
+        document.querySelector('.btn-checkout')?.addEventListener('click', function() {
+            viewModel.checkout();
+        });
+    </script>
+</body>
+</html>
